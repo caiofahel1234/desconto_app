@@ -1,26 +1,25 @@
 from src.app.entities.pedido import Pedido
 from src.app.entities.desconto import DescontoNormal, DescontoVIP, DescontoPremium
 from src.app.gateways.pedido_gateway import IPedidoGateway
+from src.app.dtos.criar_pedido_input_dto import CriarPedidoInputDTO
+from src.app.dtos.criar_pedido_output_dto import CriarPedidoOutputDTO
 
 
 class CriarPedido:
-    def __init__(self, pedido_gateway: IPedidoGateway):
-        self.pedido_gateway = pedido_gateway
+    def listar_pedidos(self) -> list[CriarPedidoOutputDTO]:
+        pedidos = self.pedido_gateway.listar()
 
-    def executar(self, cliente: str, valor_original: float, tipo_desconto: str) -> Pedido:
-        if tipo_desconto.lower() == "normal":
-            desconto = DescontoNormal()
-        elif tipo_desconto.lower() == "vip":
-            desconto = DescontoVIP()
-        elif tipo_desconto.lower() == "premium":
-            desconto = DescontoPremium()
-        else:
-            raise ValueError("Tipo de desconto inválido")
+        lista_dto = []
 
-        pedido = Pedido(cliente, valor_original, desconto)
-        self.pedido_gateway.salvar(pedido)
+        for registro in pedidos:
+            pedido = registro["pedido"]
+            dto = CriarPedidoOutputDTO(
+                cliente=pedido.cliente,
+                valor_original=pedido.valor_original,
+                valor_desconto=pedido.valor_desconto(),
+                valor_final=pedido.valor_final(),
+                tipo_desconto=registro["tipo_desconto"]
+            )
+            lista_dto.append(dto)
 
-        return pedido
-
-    def listar_pedidos(self) -> list[Pedido]:
-        return self.pedido_gateway.listar()
+        return lista_dto
